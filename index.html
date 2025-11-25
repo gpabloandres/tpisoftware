@@ -1,114 +1,37 @@
 <!DOCTYPE html>
 <html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <title>📡 Monitoreo DHT11</title>
-  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Roboto', sans-serif; }
-    body {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      min-height: 100vh;
-      background: linear-gradient(135deg, #1e3c72, #2a5298);
-      color: #fff;
-      padding: 20px;
-    }
-    h1 {
-      margin-bottom: 30px;
-      text-shadow: 1px 1px 5px rgba(0,0,0,0.3);
-    }
-    .card-container {
-      display: flex;
-      gap: 20px;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-    .card {
-      background: rgba(255,255,255,0.1);
-      backdrop-filter: blur(10px);
-      border-radius: 15px;
-      padding: 20px 30px;
-      text-align: center;
-      min-width: 150px;
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
-    }
-    .card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 12px 25px rgba(0,0,0,0.4);
-    }
-    .value {
-      font-size: 2em;
-      margin-top: 10px;
-      font-weight: 700;
-      color: #00ffe0;
-    }
-    .label {
-      font-size: 1em;
-      color: #f0f0f0;
-      margin-top: 5px;
-    }
-  </style>
-</head>
-<body>
-  <h1>📡 Monitoreo de Sensor DHT11</h1>
-  <div class="card-container">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Monitoreo LDR</title>
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+
+    <style>
+     h1{
+      color: #2093aaff;
+     }
+    </style>
+  </head>
+
+  <body>
+    <h1>Lectura Sensor LDR (Simulado)</h1>
+
     <div class="card">
-      <div class="label">Temperatura</div>
-      <div class="value" id="temperatura">-</div>
+      <div class="label">Valor LDR</div>
+      <div class="value" id="ldr">-</div>
     </div>
-    <div class="card">
-      <div class="label">Humedad</div>
-      <div class="value" id="humedad">-</div>
-    </div>
-  </div>
 
-  <script>
-    const MQTT_SERVER = "10.59.28.113";
-    // El puerto para MQTT nativo (usado por tu script Python) es 1883.
-    // Para la web, necesitamos usar MQTT sobre WebSockets (protocolo 'ws').
-    // El puerto estándar para esto es 9001. Asegúrate de que tu broker MQTT
-    // esté configurado para escuchar conexiones WebSocket en este puerto.
-    const MQTT_WS_PORT = 9001; 
-    const MQTT_TOPIC_TEMP = "tempaire/sensordht11";
-    const MQTT_TOPIC_HUM = "humidity/sensordht11";
+    <script>
+      //const client = mqtt.connect("ws://10.0.20.30:9001"); // tu IP local y puerto WebSockets {% endcomment %}
+      const client = mqtt.connect("wss://test.mosquitto.org:8081/mqtt");
 
-    // La URL de conexión para el navegador debe usar el protocolo 'ws://'
-    const BROKER_URL = `ws://${MQTT_SERVER}:${MQTT_WS_PORT}`;
-    const client = mqtt.connect(BROKER_URL);
-
-    client.on("connect", () => {
-      console.log("Conectado al broker MQTT!");
-      client.subscribe(MQTT_TOPIC_TEMP, (err) => {
-        if (!err) {
-          console.log(`Suscrito a ${MQTT_TOPIC_TEMP}`);
-        }
+      client.on("connect", () => {
+        console.log("HTML conectado al broker");
+        client.subscribe("luz/sensorldr");
       });
-      client.subscribe(MQTT_TOPIC_HUM, (err) => {
-        if (!err) {
-          console.log(`Suscrito a ${MQTT_TOPIC_HUM}`);
-        }
+
+      client.on("message", (topic, message) => {
+        document.getElementById("ldr").innerText = message.toString();
       });
-    });
-
-    client.on("message", (topic, message) => {
-      const value = message.toString();
-      console.log(`Mensaje recibido en ${topic}: ${value}`);
-      if (topic === MQTT_TOPIC_TEMP) {
-        document.getElementById("temperatura").innerText = value + " °C";
-      } else if (topic === MQTT_TOPIC_HUM) {
-        document.getElementById("humedad").innerText = value + " %";
-      }
-    });
-
-    client.on("error", (err) => {
-      console.error("Error de conexión:", err);
-      client.end();
-    });
-  </script>
-</body>
+    </script>
+  </body>
 </html>
