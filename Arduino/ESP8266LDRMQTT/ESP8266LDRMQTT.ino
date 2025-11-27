@@ -11,11 +11,11 @@
 // --- Configuración de la red y el servidor MQTT ---
 
 // Reemplaza con el nombre de tu red WiFi
-const char* ssid = "NOMBRE_DE_TU_WIFI";
+const char* ssid = "ASP";
 // Reemplaza con la contraseña de tu red WiFi
-const char* password = "PASSWORD_DE_TU_WIFI";
+const char* password = "asp110110";
 // Reemplaza con la dirección IP o dominio de tu servidor MQTT
-const char* mqtt_server = "IP_DEL_SERVIDOR_MQTT";
+const char* mqtt_server = "test.mosquitto.org";
 
 // Cliente WiFi para la conexión del ESP8266
 WiFiClient espClient;

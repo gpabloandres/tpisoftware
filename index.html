@@ -21,12 +21,13 @@
     </div>
 
     <script>
-      //const client = mqtt.connect("ws://10.0.20.30:9001"); // tu IP local y puerto WebSockets {% endcomment %}
-      const client = mqtt.connect("wss://test.mosquitto.org:8081/mqtt");
+      //const client = mqtt.connect("ws://10.59.28.113:9001"); // tu IP local y puerto WebSockets {% endcomment %}
+      //const client = mqtt.connect("wss://test.mosquitto.org:8081/mqtt");//Para el simulador
+      const client = mqtt.connect("wss://test.mosquitto.org:8081");//Para el broker online
 
       client.on("connect", () => {
         console.log("HTML conectado al broker");
-        client.subscribe("luz/sensorldr");
+        client.subscribe("ldr/light_percent");
       });
 
       client.on("message", (topic, message) => {

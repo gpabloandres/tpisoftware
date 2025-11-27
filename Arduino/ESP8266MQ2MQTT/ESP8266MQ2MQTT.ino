@@ -1,26 +1,21 @@
-// Librerías necesarias para la funcionalidad del ESP8266 y los sensores
+// Librerías necesarias para la funcionalidad del ESP8266
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
-#include "DHT.h"
 
 // --- Configuración del hardware ---
 
-// Define el tipo de sensor DHT que estás usando (DHT11 o DHT22)
-#define DHTTYPE DHT11 
-// Define el pin donde está conectado el sensor DHT. D4 en la mayoría de las placas ESP8266 es el pin 2.
-#define DHTPin D3 
-
-// Inicializa una instancia del sensor DHT
-DHT dht(DHTPin, DHTTYPE); 
+// Define el pin analógico donde está conectado el sensor MQ2.
+// El ESP8266 tiene un solo pin analógico, A0.
+#define MQ2_PIN A0
 
 // --- Configuración de la red y el servidor MQTT ---
 
 // Reemplaza con el nombre de tu red WiFi
-const char* ssid = "MOVISTAR WIFI4497";
+const char* ssid = "MOVISTAR WIFI4497"; // Ejemplo, reemplaza con tu SSID
 // Reemplaza con la contraseña de tu red WiFi
-const char* password = "689ms4283kxz7ge";
+const char* password = "689ms4283kxz7ge"; // Ejemplo, reemplaza con tu contraseña
 // Reemplaza con la dirección IP o dominio de tu servidor MQTT
-const char* mqtt_server = "10.50.139.113"; 
+const char* mqtt_server = "test.mosquitto.org"; // Ejemplo, reemplaza con la IP de tu servidor MQTT
 
 // Cliente WiFi para la conexión del ESP8266
 WiFiClient espClient;
@@ -31,8 +26,8 @@ PubSubClient client(espClient);
 
 // Guarda el último tiempo de publicación de datos
 unsigned long lastMsg = 0;
-// Intervalo de tiempo para enviar datos (en milisegundos), 10 segundos
-const unsigned long publishInterval = 10000;
+// Intervalo de tiempo para enviar datos (en milisegundos), 5 segundos
+const unsigned long publishInterval = 5000;
 
 // --- Funciones principales ---
 
@@ -43,10 +38,11 @@ void callback(char* topic, byte* payload, unsigned int length) {
   Serial.print("]: ");
   
   // Imprime el contenido del mensaje
+  String message;
   for (unsigned int i = 0; i < length; i++) {
-    Serial.print((char)payload[i]);
+    message += (char)payload[i];
   }
-  Serial.println();
+  Serial.println(message);
 }
 
 // Se ejecuta si la conexión MQTT se pierde para intentar reconectar
@@ -54,13 +50,13 @@ void reconnect() {
   while (!client.connected()) {
     Serial.println("Conexión MQTT perdida. Intentando reconectar...");
     
-    // Intenta conectar con un ID de cliente único. "ESP8266Client" es el ID por defecto.
-    if (client.connect("ESP8266Client")) {
+    // Intenta conectar con un ID de cliente único.
+    if (client.connect("ESP8266_MQ2_Client")) {
       Serial.println("¡Reconectado a MQTT!");
       // Publica un mensaje de confirmación al conectar
-      client.publish("event", "ESP8266 conectado y publicando datos");
-      // Se suscribe a un tópico para recibir comandos, si es necesario
-      // client.subscribe("cmd/dht");
+      client.publish("status/mq2", "ESP8266 MQ2 conectado");
+      // Puedes suscribirte a un tópico para recibir comandos, si es necesario
+      // client.subscribe("cmd/mq2");
     } else {
       Serial.print("Fallo en la reconexión. Código de estado: ");
       Serial.print(client.state());
@@ -96,13 +92,11 @@ void setup_wifi() {
 void setup() {
   // Inicia la comunicación serial para depuración
   Serial.begin(115200);
-  // Inicia el sensor DHT
-  dht.begin();
   
   // Llama a la función para conectar a WiFi
   setup_wifi();
   
-  // Establece la dirección del servidor MQTT y el puerto (1883 es el puerto por defecto)
+  // Establece la dirección del servidor MQTT y el puerto (1883 es el por defecto)
   client.setServer(mqtt_server, 1883);
   // Asigna la función de callback para manejar los mensajes MQTT
   client.setCallback(callback);
@@ -119,34 +113,23 @@ void loop() {
   // Obtiene el tiempo actual
   unsigned long now = millis();
   
-  // Condición para publicar datos cada 10 segundos de forma no bloqueante
+  // Condición para publicar datos cada 'publishInterval' milisegundos
   if (now - lastMsg >= publishInterval) {
     lastMsg = now;
 
-    // Leer la humedad y la temperatura del sensor DHT11
-    float humedad = dht.readHumidity();
-    float temperaturaC = dht.readTemperature();
+    // Leer el valor del sensor MQ2 (devuelve un valor entre 0 y 1023)
+    int mq2Value = analogRead(MQ2_PIN);
 
-    // Verificación de errores en la lectura del sensor
-    if (isnan(humedad) || isnan(temperaturaC)) {
-      Serial.println("¡Error al leer del sensor DHT!");
-      return;
-    }
+    // Convertir el valor a cadena de texto para publicar
+    String payload = String(mq2Value);
 
-    // Convertir los valores a cadena de texto para publicar
-    String tempPayload = String(temperaturaC, 2); // 2 decimales para la temperatura
-    String humPayload = String(humedad, 2);   // 2 decimales para la humedad
-
-    // Publicar valores de temperatura y humedad en sus respectivos tópicos
-    client.publish("tempaire/sensordht11", tempPayload.c_str());
-    client.publish("humidity/sensordht11", humPayload.c_str());
+    // Publicar el valor en el tópico MQTT
+    client.publish("mq2/gas_raw", payload.c_str());
     
     // Imprime los valores en el monitor serial para depuración
-    Serial.print("Humedad: ");
-    Serial.print(humedad);
-    Serial.println(" %");
-    Serial.print("Temperatura: ");
-    Serial.print(temperaturaC);
-    Serial.println(" °C");
+    Serial.print("Valor MQ2 crudo: ");
+    Serial.println(mq2Value);
+    // Nota: Para obtener valores en PPM, se requiere calibración y una curva de respuesta del sensor.
+    // Este valor crudo es útil para detectar la presencia relativa de gases.
   }
 }
