@@ -29,6 +29,9 @@ unsigned long lastMsg = 0;
 // Intervalo de tiempo para enviar datos (en milisegundos), 5 segundos
 const unsigned long publishInterval = 5000;
 
+// Guarda el último tiempo de intento de reconexión a MQTT
+unsigned long lastReconnectAttempt = 0;
+
 // --- Funciones principales ---
 
 // Maneja los mensajes entrantes del servidor MQTT
@@ -47,22 +50,29 @@ void callback(char* topic, byte* payload, unsigned int length) {
 
 // Se ejecuta si la conexión MQTT se pierde para intentar reconectar
 void reconnect() {
-  while (!client.connected()) {
-    Serial.println("Conexión MQTT perdida. Intentando reconectar...");
-    
-    // Intenta conectar con un ID de cliente único.
-    if (client.connect("ESP8266_LDR_Client")) {
-      Serial.println("¡Reconectado a MQTT!");
-      // Publica un mensaje de confirmación al conectar
-      client.publish("status/ldr", "ESP8266 LDR conectado");
-      // Puedes suscribirte a un tópico para recibir comandos, si es necesario
-      // client.subscribe("cmd/ldr");
-    } else {
-      Serial.print("Fallo en la reconexión. Código de estado: ");
-      Serial.print(client.state());
-      Serial.println(". Reintentando en 5 segundos...");
-      // Espera 5 segundos antes de reintentar
-      delay(5000);
+  // No bloquear el loop. Intentar reconectar cada 5 segundos.
+  if (!client.connected()) {
+    unsigned long now = millis();
+    if (now - lastReconnectAttempt > 5000) {
+      lastReconnectAttempt = now;
+      Serial.println("Conexion MQTT perdida. Intentando reconectar...");
+
+      // Genera un ID de cliente único usando la dirección MAC del ESP8266
+      String clientId = "ESP8266-LDR-";
+      clientId += String(WiFi.macAddress());
+
+      Serial.print("Intentando conectar al broker MQTT con el ID de cliente: ");
+      Serial.println(clientId);
+
+      if (client.connect(clientId.c_str())) {
+        lastReconnectAttempt = 0; // Resetea para la próxima desconexión
+        Serial.println("¡Reconectado a MQTT!");
+        client.publish("status/ldr", "ESP8266 LDR conectado");
+      } else {
+        Serial.print("Fallo en la reconexion. Codigo de estado: ");
+        Serial.print(client.state());
+        Serial.println(". Reintentando en 5 segundos...");
+      }
     }
   }
 }
@@ -103,10 +113,13 @@ void setup() {
 }
 
 void loop() {
-  // Asegura que el cliente MQTT se mantenga conectado
-  if (!client.connected()) {
-    reconnect();
+  // Si se pierde la conexión WiFi, intentar reconectar.
+  if (WiFi.status() != WL_CONNECTED) {
+    setup_wifi();
   }
+
+  // Solo intentar conectar a MQTT si hay conexión WiFi
+  reconnect(); // Esta función ya comprueba si client.connected() es falso
   // Permite que el cliente MQTT procese mensajes entrantes y mantenga la conexión
   client.loop();
 
