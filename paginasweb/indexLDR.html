@@ -27,7 +27,7 @@
 
       client.on("connect", () => {
         console.log("HTML conectado al broker");
-        client.subscribe("ldr/light_percent");
+        client.subscribe("luz/sensorldr");
       });
 
       client.on("message", (topic, message) => {
