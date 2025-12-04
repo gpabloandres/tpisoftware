@@ -62,7 +62,7 @@ void reconnect() {
       Serial.println("Conexion MQTT perdida. Intentando reconectar...");
       
     // Genera un ID de cliente único usando la dirección MAC del ESP8266
-    String clientId = "ESP8266Client-";
+    String clientId = "numeroDeSerie";
     clientId += String(WiFi.macAddress());
 
     Serial.print("Intentando conectar al broker MQTT con el ID de cliente: ");
@@ -152,8 +152,8 @@ void loop() {
     String humPayload = String(humedad, 2);   // 2 decimales para la humedad
 
     // Publicar valores de temperatura y humedad en sus respectivos tópicos
-    client.publish("sensor/dht11/temperatura", tempPayload.c_str());
-    client.publish("sensor/dht11/humedad", humPayload.c_str());
+    client.publish("comedor/dht11/temperatura", tempPayload.c_str());
+    client.publish("comedor/dht11/humedad", humPayload.c_str());
     
     // Imprime los valores en el monitor serial para depuración
     Serial.print("Humedad: ");

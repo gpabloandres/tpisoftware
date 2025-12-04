@@ -7,9 +7,9 @@ import json
 # --- Configuración del broker MQTT ---
 MQTT_SERVER = "test.mosquitto.org"      # Broker público para pruebas
 MQTT_PORT = 1883                          # Puerto MQTT estándar
-MQTT_TOPIC_TEMP = "sensor/dht11/temperatura" # Tópico para la temperatura
-MQTT_TOPIC_HUM = "sensor/dht11/humedad"      # Tópico para la humedad
-CLIENT_ID = "PythonSimDHT11"              # ID único para el cliente
+MQTT_TOPIC_TEMP = "comedor/dht11/temperatura" # Tópico para la temperatura
+MQTT_TOPIC_HUM = "comedor/dht11/humedad"      # Tópico para la humedad
+CLIENT_ID = "numeroDeSerie"              # ID único para el cliente
 
 # Crea una instancia del cliente MQTT
 client = mqtt.Client(client_id=CLIENT_ID)

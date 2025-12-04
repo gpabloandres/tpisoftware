@@ -64,15 +64,15 @@
 
       client.on("connect", () => {
         console.log("HTML conectado al broker MQTT");
-        client.subscribe(["sensor/dht11/temperatura", "sensor/dht11/humedad"]);
+        client.subscribe(["comedor/dht11/temperatura", "comedor/dht11/humedad"]);
       });
 
       client.on("message", (topic, message) => {
         const value = message.toString();
         console.log(`Mensaje recibido en el topic ${topic}: ${value}`);
-        if (topic === "sensor/dht11/temperatura") {
+        if (topic === "comedor/dht11/temperatura") {
           document.getElementById("temperatura").innerText = value + " °C";
-        } else if (topic === "sensor/dht11/humedad") {
+        } else if (topic === "comedor/dht11/humedad") {
           document.getElementById("humedad").innerText = value + " %";
         }
       });
